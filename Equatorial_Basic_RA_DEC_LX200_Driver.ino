@@ -5,15 +5,15 @@ SoftwareSerial mySerial(12, 13); // RX, TX - debug
 
 const int ledPin =  13;      // the number of the LED pin
 // This motor should not have a delay lower then 6000ms!
-const int RA_motor_pin_1 =  8; // These are the pins for the stepper originally hooked up
-const int RA_motor_pin_2 =  6; // to the GS-280 hand controller on an EQ3 mount for RA
-const int RA_motor_pin_3 =  9; // Essentially randmly chosen, but contiguous.
-const int RA_motor_pin_4 =  7; //  
+const int RA_motor_pin_1 =  4; // These are the pins for the stepper originally hooked up
+const int RA_motor_pin_2 =  2; // to the GS-280 hand controller on an EQ3 mount for RA
+const int RA_motor_pin_3 =  5; // Essentially randmly chosen, but contiguous.
+const int RA_motor_pin_4 =  3; //  
 // This motor should not have a delay lower then 6000ms!
-const int DEC_motor_pin_1 =  2; // These are the pins for the homebrew DEC motor
-const int DEC_motor_pin_2 =  3; // 
-const int DEC_motor_pin_3 =  4; // 
-const int DEC_motor_pin_4 =  5; //  
+const int DEC_motor_pin_1 =  8; // These are the pins for the homebrew DEC motor
+const int DEC_motor_pin_2 =  9; // 
+const int DEC_motor_pin_3 =  10; // 
+const int DEC_motor_pin_4 =  11; //  
 // Variables will change:
 int ledState = LOW;             // ledState used to set the LED
 int numcount = 0;
@@ -26,8 +26,9 @@ char cmdEnd;
 char cmdBuffer;
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
-boolean RA_steppingEnabled = true; // Are we stepping or not - RA yes for default tracking
-boolean DEC_steppingEnabled = false; // but not DEC
+boolean RA_tracking_Enabled = true; // Always track - Currently unused
+boolean RA_steppingEnabled = true; // Non-default RA movement if we are doing something other than tracking
+boolean DEC_steppingEnabled = false; // DEC movement is always optional
 // the follow variables are a long because the time, measured in RA_Microseconds,
 // will quickly become a bigger number than can be stored in an int.
 
@@ -45,8 +46,8 @@ long previousStepDEC_Micros = 0;        // will store last time Stepper was move
 // 10416 gives 1rp60s, 
 // 17186 gives 1rev per 100 seconds
 // 34372 - 1 rev per 195 seconds?
-int minimumDEC_StepInterval = 6000; // Stepping delays lower than this geneDEClly fail
-long initialDEC_StepInterval = 34720; // Delay between steps, reasonable estimate, smaller = faster, 
+int minimumDEC_StepInterval = 6000; // Stepping delays lower than this generally fail
+long initialDEC_StepInterval = 12000; // Delay between steps, its a number that works
 int maximumDEC_StepInterval = ((initialDEC_StepInterval - minimumDEC_StepInterval) + initialDEC_StepInterval);
 unsigned long DEC_StepInterval = initialDEC_StepInterval;
 //long autoDrifttimerStart = 0;
@@ -96,7 +97,7 @@ void parseLX200(String thisCommand)
           case 'C':
             RA_StepInterval = (initialRA_StepInterval *2);
             DEC_StepInterval = (initialDEC_StepInterval *2);
-            Serial.println(" Set interval to double for half speed");
+            Serial.println(" Set interval to half default");
           break;
           case 'G':
            RA_StepInterval = initialRA_StepInterval;
@@ -106,7 +107,7 @@ void parseLX200(String thisCommand)
           case 'M':
            RA_StepInterval = initialRA_StepInterval/2;
            DEC_StepInterval = initialDEC_StepInterval/2;
-           Serial.println(" Set interval to half default for DOUBLE SPEED");
+           Serial.println(" Set interval to DOUBLE SPEED");
           break;
           case 'S':
            RA_StepInterval = minimumRA_StepInterval;
@@ -118,29 +119,34 @@ void parseLX200(String thisCommand)
         case 'M':  // Movement Control - M
           switch (inputString.charAt(2)) {
           case 'w':
-            RA_step_direction = 0;
+            RA_step_direction = 1;
             RA_steppingEnabled = true;
-            Serial.println("Move forwards");
+            // We really just need to speed things up
+            RA_StepInterval = (initialRA_StepInterval /4);
+            Serial.println("Move RA forwards (west)");
           break;
           case 'e':
             RA_step_direction = 1;
             RA_steppingEnabled = true;
-            Serial.println("Move backwards");
+            // We really just need to slow things down
+            RA_StepInterval = (initialRA_StepInterval *4);
+            Serial.println("Move RA backwards (east) ");
           break;
           case 'n':
             DEC_step_direction = 0;
             DEC_steppingEnabled = true;
-            Serial.println("Move forwards");
+            Serial.println("Move DEC forwards (north)");
           break;
           case 's':
             DEC_step_direction = 1;
             DEC_steppingEnabled = true;
-            Serial.println("Move backwards");
+            Serial.println("Move DEC backwards (south)");
           break;
           } // CaseM Char2
         break; // End movemont control
       case 'Q': // Stop Moving - Q
-        RA_steppingEnabled = 0;
+        RA_steppingEnabled = 1; // We still move RA 
+        RA_StepInterval = initialRA_StepInterval; // We just set the speed so that stars should be "stationary" relative to everything else
         DEC_steppingEnabled = 0;
         Serial.println ("Stepping halted");
         break;
@@ -259,10 +265,10 @@ if (RA_steppingEnabled)  {  // But only if RA stepEnabled is true!
  if ( currentRA_Micros > (previousStepRA_Micros+minimumRA_StepInterval)) {// Dont step too fast
     if((currentRA_Micros - previousStepRA_Micros) > RA_StepInterval) {// Has time elapsed to step?  
       previousStepRA_Micros = currentRA_Micros; //Reset step timer
-        if (RA_step_direction == 1) {// moving forwards?
+        if (RA_step_direction == 0) {// moving forwards?
           RA_step_number++;
         }
-        if (RA_step_direction == 0) {// Or backwards?
+        if (RA_step_direction == 1) {// Or backwards?
           RA_step_number--;
         }
         stepRA_Motor(RA_step_number % 4);

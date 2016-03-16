@@ -247,8 +247,8 @@ void loop()
  //   stringComplete = false;
  // }
   
-  unsigned long currentRA_Micros = micros(); 
-  unsigned long currentDEC_Micros = micros(); 
+  long currentRA_Micros = micros(); 
+  long currentDEC_Micros = micros(); 
   
   //  Timer for serial out if needed - unused currently
   if(micros() - previousSerialOut_Micros > SerialOutputInterval) 

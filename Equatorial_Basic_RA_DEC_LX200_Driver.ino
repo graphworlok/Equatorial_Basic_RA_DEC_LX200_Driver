@@ -273,8 +273,11 @@ if (RA_steppingEnabled)  {  // But only if RA stepEnabled is true!
         }
         stepRA_Motor(RA_step_number % 4);
       //Serial.println(RA_step_number);
-      }  
-    }
+        }  
+        }
+	if (currentRA_Micros < 0 && previousStepRA_Micros > 0) { // If we wrap around to 0 for currentRA_Micros, and previousStepRA_Micros is still positive
+            previousStepRA_Micros = currentRA_Micros; //Reset step timer as the previous 
+	}
 } // End RA step choice loop
 
 if (DEC_steppingEnabled) {

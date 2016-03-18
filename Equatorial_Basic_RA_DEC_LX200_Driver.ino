@@ -38,7 +38,7 @@ long previousStepRA_Micros = 0;        // will store last time Stepper was moved
 // 17186 gives 1rev per 100 seconds
 // 34372 - 1 rev per 195 seconds?
 int minimumRA_StepInterval = 6000; // Stepping delays lower than this generally fail
-long initialRA_StepInterval = 46410; // Delay between steps, timed with arduino so accuracy may be lacking
+long initialRA_StepInterval = 34783; // Delay between steps, timed with stopwatch so accuracy may be lacking
 int maximumRA_StepInterval = ((initialRA_StepInterval - minimumRA_StepInterval) + initialRA_StepInterval);
 unsigned long RA_StepInterval = initialRA_StepInterval;
 // Init DEC timer intervals
@@ -150,6 +150,11 @@ void parseLX200(String thisCommand)
         DEC_steppingEnabled = 0;
         Serial.println ("Stepping halted");
         break;
+      case 'X': // Stop TOTALLY
+	RA_steppingEnabled = 0; Stop moving, for bench testing
+	DEC_steppingEnabled = 0;
+	Serial.println ("Stepping totally halted");
+	break;
       case 'G': // Get Data
         switch (inputString.charAt(2)) {
           case 'Z': // Azimuth

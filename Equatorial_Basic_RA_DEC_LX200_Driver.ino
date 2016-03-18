@@ -151,7 +151,7 @@ void parseLX200(String thisCommand)
         Serial.println ("Stepping halted");
         break;
       case 'X': // Stop TOTALLY
-	RA_steppingEnabled = 0; Stop moving, for bench testing
+	RA_steppingEnabled = 0; // Stop moving, for bench testing
 	DEC_steppingEnabled = 0;
 	Serial.println ("Stepping totally halted");
 	break;
